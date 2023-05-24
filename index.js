@@ -1,4 +1,41 @@
+require("dotenv").config();
 const puppeteer = require("puppeteer-core");
+
+const bizboxURL = "https://gw.forbiz.co.kr/gw/uat/uia/egovLoginUsr.do";
+
+// 요소에 value값 삽입
+// const enterValueToElement = async (page, target, inputValue = "") => {
+//   await page.$eval(target, (el, value) => (el.value = value), inputValue);
+// };
+
+// // 비즈박스 로그인
+// const loginToBizbox = async (page) => {
+//   await enterValueToElement(page, "#userId", process.env.BIZBOX_ID);
+//   await enterValueToElement(page, "#userPw", process.env.BIZBOX_PASSWORD);
+
+//   await page.click(".login_submit");
+// };
+
+class PageMacro {
+  constructor(page) {
+    this.page = page;
+  }
+
+  async enterValueToElement(target, inputValue) {
+    await this.page.$eval(
+      target,
+      (el, value) => (el.value = value),
+      inputValue
+    );
+  }
+
+  async login(id, password) {
+    await this.enterValueToElement("#userId", id);
+    await this.enterValueToElement("#userPw", password);
+
+    await this.page.click(".login_submit");
+  }
+}
 
 (async () => {
   const browser = await puppeteer.launch({
@@ -11,8 +48,21 @@ const puppeteer = require("puppeteer-core");
   });
   const page = await browser.newPage();
 
+  // 페이지의 크기를 설정한다.
+  await page.setViewport({
+    width: 1366,
+    height: 768,
+  });
+
   // 페이지로 이동
-  await page.goto("https://www.naver.com/");
+  await page.goto(bizboxURL);
+
+  const pageMacro = new PageMacro(page);
+
+  await pageMacro.login(process.env.BIZBOX_ID, process.env.BIZBOX_PASSWORD);
+
+  // 로그인
+  // await loginToBizbox(page);
 
   // 요소 클릭
   // await page.click(".MyView-module__link_login___HpHMW");
@@ -20,12 +70,6 @@ const puppeteer = require("puppeteer-core");
   // .b 요소가 로드될때 까지 대기
   //   await page.waitForSelector(".b");
   //   await page.click(".b");
-
-  // 페이지의 크기를 설정한다.
-  await page.setViewport({
-    width: 1366,
-    height: 768,
-  });
 
   // dialog 이벤트 핸들러 등록 => alert창 뜰때마다 실행
   page.on("dialog", async (dialog) => {

@@ -3,19 +3,6 @@ const puppeteer = require("puppeteer-core");
 
 const bizboxURL = "https://gw.forbiz.co.kr/gw/uat/uia/egovLoginUsr.do";
 
-// 요소에 value값 삽입
-// const enterValueToElement = async (page, target, inputValue = "") => {
-//   await page.$eval(target, (el, value) => (el.value = value), inputValue);
-// };
-
-// // 비즈박스 로그인
-// const loginToBizbox = async (page) => {
-//   await enterValueToElement(page, "#userId", process.env.BIZBOX_ID);
-//   await enterValueToElement(page, "#userPw", process.env.BIZBOX_PASSWORD);
-
-//   await page.click(".login_submit");
-// };
-
 class PageMacro {
   constructor(page) {
     this.page = page;
@@ -35,6 +22,20 @@ class PageMacro {
 
     await this.page.click(".login_submit");
   }
+
+  async moveToSchedulePage() {
+    await this.page.waitForSelector("#topMenu300000000");
+    await this.page.click("#topMenu300000000");
+
+    await this.page.waitForXPath("//*[text()='[플본] FE파트']"); // '[플본] FE파트'라는 텍스트가 있는 요소가 나타날 때까지 대기합니다.
+    const elements = await this.page.$x("//*[text()='[플본] FE파트']"); // '[플본] FE파트'라는 텍스트가 있는 모든 요소를 XPath를 통해 찾습니다.
+    // 첫 번째 요소를 클릭합니다.
+    if (elements.length > 0) {
+      await elements[0].click();
+    }
+
+    // await this.page.click(".fc-agendaDay-button");
+  }
 }
 
 (async () => {
@@ -50,8 +51,8 @@ class PageMacro {
 
   // 페이지의 크기를 설정한다.
   await page.setViewport({
-    width: 1366,
-    height: 768,
+    width: 1920,
+    height: 1080,
   });
 
   // 페이지로 이동
@@ -59,13 +60,11 @@ class PageMacro {
 
   const pageMacro = new PageMacro(page);
 
+  // 로그인
   await pageMacro.login(process.env.BIZBOX_ID, process.env.BIZBOX_PASSWORD);
 
-  // 로그인
-  // await loginToBizbox(page);
-
-  // 요소 클릭
-  // await page.click(".MyView-module__link_login___HpHMW");
+  // 일정 페이지로 이동
+  await pageMacro.moveToSchedulePage();
 
   // .b 요소가 로드될때 까지 대기
   //   await page.waitForSelector(".b");

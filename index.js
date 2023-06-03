@@ -81,27 +81,82 @@ class PageMacro {
     await this.waitLoading();
   }
 
-  async addSchedule(start, end) {
-    // 10 [스마일게이트] 통합 QA, 디자인 검수 이슈처리
-    // 10.5 [스마일게이트] 주간회의
-
+  async addSchedule(title, start, end) {
     await this.page.evaluate(
-      (startTime, endTime) => {
+      (title, startTime, endTime) => {
         const $iframe = $("#_content");
         const $iframeWindow = $iframe.get(0).contentWindow;
         const $iframeDocument = $iframe.contents();
 
         $iframeWindow.wrapWindowByMaskInsert(startTime, endTime);
         // 일정 제목 입력
-        $iframeDocument.find("#inputTitleInsert").val("test");
+        $iframeDocument.find("#inputTitleInsert").val(title);
         // 일정 저장
-        // $iframeDocument.find("#pupupInsert").click();
+        $iframeDocument.find("#pupupInsert").click();
       },
+      title,
       start,
       end
     );
   }
 }
+
+// 입력시간 포맷 맞춤 Ex. 2023-06-03T11:00:00
+const getDateTimeFormat = (time) => {
+  const numberTime = Number(time);
+  const currentDate = new Date();
+
+  // #region 날짜 포맷
+  const year = currentDate.getFullYear();
+  const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+  const day = String(currentDate.getDate()).padStart(2, "0");
+
+  const formattedDate = `${year}-${month}-${day}`;
+  // #endregion
+
+  // #region 시간 포맷
+  const hour = Math.floor(numberTime).toString().padStart(2, "0");
+  let minute = "";
+  if (Math.ceil(numberTime) == numberTime) {
+    // 소수점 아니면
+    minute = "00";
+  } else {
+    minute = "30";
+  }
+
+  const formattedTime = `${hour}:${minute}:00`;
+  // #endregion
+
+  // 10 [스마일게이트] 통합 QA, 디자인 검수 이슈처리
+  // 10.5 [스마일게이트] 주간회의
+  // 16.5 [푸드케어] 주간회의
+  // 18 [스마일게이트] 통합 QA, 디자인 검수 이슈처리
+
+  return `${formattedDate}T${formattedTime}`;
+};
+
+const getFilteredData = () => {
+  // TODO: Test Data
+  const data = [
+    {
+      title: "[FE] TEST",
+      start: 11,
+      end: 11.5,
+    },
+    {
+      title: "[FE] TEST2",
+      start: 11.5,
+      end: 12.5,
+    },
+    {
+      title: "[FE] TEST3",
+      start: 13.5,
+      end: 15.5,
+    },
+  ];
+
+  return data;
+};
 
 (async () => {
   const browser = await puppeteer.launch({
@@ -134,7 +189,17 @@ class PageMacro {
   // 일정 페이지로 이동
   await pageMacro.moveToSchedulePage();
 
-  await pageMacro.addSchedule("2023-06-03T11:00:00", "2023-06-03T12:00:00");
+  const data = getFilteredData();
+
+  data.forEach((item) => {
+    (async () => {
+      await pageMacro.addSchedule(
+        item.title,
+        getDateTimeFormat(item.start),
+        getDateTimeFormat(item.end)
+      );
+    })();
+  });
 
   // 브라우저 닫기
   //await browser.close();

@@ -32,6 +32,22 @@ class PageMacro {
     await this.page.click(".login_submit");
   }
 
+  // 일정 등록 Iframe 요소 getter
+  async getIframe() {
+    const iframeElement = await this.page.$("iframe");
+    const frame = await iframeElement.contentFrame();
+
+    return frame;
+  }
+
+  // 일정 등록 Iframe 로딩 대기
+  async waitLoading() {
+    const frame = await this.getIframe();
+
+    await frame.waitForSelector("#loadingProgressBar");
+    await frame.waitForSelector("#loadingProgressBar", { hidden: true });
+  }
+
   // 일정 페이지로 이동
   async moveToSchedulePage() {
     await this.page.waitForSelector("#topMenu300000000");
@@ -43,25 +59,30 @@ class PageMacro {
     if (elements.length > 0) {
       await elements[0].click();
     }
+
+    // iframe 로딩 끝나길 대기
+    await this.waitLoading();
+
+    const frame = await this.getIframe();
+
+    await frame.waitForSelector(".fc-agendaDay-button");
+    await frame.click(".fc-agendaDay-button");
   }
 
   // 일정 등록 함수 활성화처리
   async activateScheduleInsertFunction() {
-    const iframeElement = await this.page.$("iframe");
-    const frame = await iframeElement.contentFrame();
+    const frame = await this.getIframe();
 
     await frame.waitForSelector("[data-time='00:00:00'] > .fc-widget-content");
     // 00시 테이블 열
     const rows = await frame.$$("[data-time='00:00:00'] > .fc-widget-content");
 
-    // console.log(rows[1]);
+    // setTimeout(async () => {
+    //   await rows[1].click();
 
-    setTimeout(async () => {
-      await rows[1].click();
-
-      await frame.waitForSelector("#popupInsertClose");
-      await frame.click("#popupInsertClose");
-    }, 3000);
+    //   await frame.waitForSelector("#popupInsertClose");
+    //   await frame.click("#popupInsertClose");
+    // }, 3000);
   }
 }
 
@@ -88,7 +109,7 @@ class PageMacro {
   const pageMacro = new PageMacro(page);
 
   // 알럿 무시
-  pageMacro.ignoreAlert();
+  // pageMacro.ignoreAlert();
 
   // 로그인
   await pageMacro.login(process.env.BIZBOX_ID, process.env.BIZBOX_PASSWORD);
@@ -102,7 +123,7 @@ class PageMacro {
   //   window 함수 접근후 실행
   await page.evaluate(() => {
     // window.alert("I am Alert");
-    // console.log(window.wrapWindowByMaskInsert);
+    console.log(window.wrapWindowByMaskInsert);
   });
 
   // 키보드 입력

@@ -48,10 +48,20 @@ class PageMacro {
     await frame.waitForSelector("#loadingProgressBar", { hidden: true });
   }
 
+  async waitAndClickElement(element, wrapper = this.page) {
+    await wrapper.waitForSelector(element);
+    /*
+    const elements = await wrapper.$$(element);
+    elements.forEach(async (el) => {
+      await el.evaluate((el) => console.log($(el))); // 요소의 특정 속성 값을 가져옵니다.
+    });
+    */
+    await wrapper.click(element);
+  }
+
   // 일정 페이지로 이동
   async moveToSchedulePage() {
-    await this.page.waitForSelector("#topMenu300000000");
-    await this.page.click("#topMenu300000000");
+    await this.waitAndClickElement("#topMenu300000000");
 
     await this.page.waitForXPath("//*[text()='[플본] FE파트']"); // '[플본] FE파트'라는 텍스트가 있는 요소가 나타날 때까지 대기합니다.
     const elements = await this.page.$x("//*[text()='[플본] FE파트']"); // '[플본] FE파트'라는 텍스트가 있는 모든 요소를 XPath를 통해 찾습니다.
@@ -65,24 +75,31 @@ class PageMacro {
 
     const frame = await this.getIframe();
 
-    await frame.waitForSelector(".fc-agendaDay-button");
-    await frame.click(".fc-agendaDay-button");
+    await this.waitAndClickElement(".fc-agendaDay-button", frame);
+    await this.waitAndClickElement("#worklist_sel", frame);
+
+    await this.waitLoading();
   }
 
-  // 일정 등록 함수 활성화처리
-  async activateScheduleInsertFunction() {
-    const frame = await this.getIframe();
+  async addSchedule(start, end) {
+    // 10 [스마일게이트] 통합 QA, 디자인 검수 이슈처리
+    // 10.5 [스마일게이트] 주간회의
 
-    await frame.waitForSelector("[data-time='00:00:00'] > .fc-widget-content");
-    // 00시 테이블 열
-    const rows = await frame.$$("[data-time='00:00:00'] > .fc-widget-content");
+    await this.page.evaluate(
+      (startTime, endTime) => {
+        const $iframe = $("#_content");
+        const $iframeWindow = $iframe.get(0).contentWindow;
+        const $iframeDocument = $iframe.contents();
 
-    // setTimeout(async () => {
-    //   await rows[1].click();
-
-    //   await frame.waitForSelector("#popupInsertClose");
-    //   await frame.click("#popupInsertClose");
-    // }, 3000);
+        $iframeWindow.wrapWindowByMaskInsert(startTime, endTime);
+        // 일정 제목 입력
+        $iframeDocument.find("#inputTitleInsert").val("test");
+        // 일정 저장
+        // $iframeDocument.find("#pupupInsert").click();
+      },
+      start,
+      end
+    );
   }
 }
 
@@ -109,7 +126,7 @@ class PageMacro {
   const pageMacro = new PageMacro(page);
 
   // 알럿 무시
-  // pageMacro.ignoreAlert();
+  pageMacro.ignoreAlert();
 
   // 로그인
   await pageMacro.login(process.env.BIZBOX_ID, process.env.BIZBOX_PASSWORD);
@@ -117,17 +134,7 @@ class PageMacro {
   // 일정 페이지로 이동
   await pageMacro.moveToSchedulePage();
 
-  // 일정 함수 실행시킴 (일정 등록 함수 활성화 하기 위함)
-  await pageMacro.activateScheduleInsertFunction();
-
-  //   window 함수 접근후 실행
-  await page.evaluate(() => {
-    // window.alert("I am Alert");
-    console.log(window.wrapWindowByMaskInsert);
-  });
-
-  // 키보드 입력
-  //   await page.keyboard.press("Enter");
+  await pageMacro.addSchedule("2023-06-03T11:00:00", "2023-06-03T12:00:00");
 
   // 브라우저 닫기
   //await browser.close();

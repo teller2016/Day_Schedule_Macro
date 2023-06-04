@@ -1,5 +1,6 @@
 require("dotenv").config();
-const args = process.argv;
+const isPkg = typeof process.pkg !== "undefined";
+const args = isPkg ? pkg.argv : process.argv;
 
 const puppeteer = require("puppeteer");
 
@@ -209,6 +210,7 @@ const dayMacro = async (data) => {
 
 const init = () => {
   const daySchedule = args[2];
+  console.log(daySchedule);
   dayMacro(daySchedule);
 };
 

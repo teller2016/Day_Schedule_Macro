@@ -1,4 +1,6 @@
 require("dotenv").config();
+const args = process.argv;
+
 const puppeteer = require("puppeteer");
 
 const bizboxURL = "https://gw.forbiz.co.kr/gw/uat/uia/egovLoginUsr.do";
@@ -155,18 +157,8 @@ const getFilteredData = (data, workStartTime = 9.5, lunchEndTime = 13.5) => {
 
   return schedules;
 };
-// const args = process.argv;
-// (() => {
-//   console.log(args);
-//   return;
-//   const data =
-//     "10 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n10.5 [스마일게이트] 주간회의\n\n12 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n12.5 [희망스튜디오] 주간회의\n\n14.5 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n15 [스마일게이트] 주간회의\n\n15.5 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n16 [희망스튜디오] 시안 폰트 변경\n\n16.5 [푸드케어] 주간회의\n\n18 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n18.5 [FE] 스마일게이트 이슈 작업 가이드";
-//   const dataList = getFilteredData(data);
 
-//   console.log(dataList);
-// })();
-// return;
-(async () => {
+const dayMacro = async (data) => {
   const browser = await puppeteer.launch({
     //headless:false로 변경하면 브라우저 창이 뜨는것을 볼 수 있습니다.
     headless: false,
@@ -197,8 +189,8 @@ const getFilteredData = (data, workStartTime = 9.5, lunchEndTime = 13.5) => {
   // 일정 페이지로 이동
   await pageMacro.moveToSchedulePage();
 
-  const data =
-    "10 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n10.5 [스마일게이트] 주간회의\n\n12 [스마일게이트] 통합 QA, 디자인 검수 이슈처리";
+  // const data =
+  //   "10 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n10.5 [스마일게이트] 주간회의\n\n12 [스마일게이트] 통합 QA, 디자인 검수 이슈처리";
   const dataList = getFilteredData(data);
 
   for (const item of dataList) {
@@ -213,4 +205,12 @@ const getFilteredData = (data, workStartTime = 9.5, lunchEndTime = 13.5) => {
 
   // 브라우저 닫기
   //await browser.close();
-})();
+};
+
+const init = () => {
+  const daySchedule = args[2];
+  dayMacro(daySchedule);
+};
+
+// 실행
+init();

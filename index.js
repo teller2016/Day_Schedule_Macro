@@ -135,29 +135,37 @@ const getDateTimeFormat = (time) => {
   return `${formattedDate}T${formattedTime}`;
 };
 
-const getFilteredData = () => {
-  // TODO: Test Data
-  const data = [
-    {
-      title: "[FE] TEST",
-      start: 11,
-      end: 11.5,
-    },
-    {
-      title: "[FE] TEST2",
-      start: 11.5,
-      end: 12.5,
-    },
-    {
-      title: "[FE] TEST3",
-      start: 13.5,
-      end: 15.5,
-    },
-  ];
+const getFilteredData = (data, workStartTime = 9.5, lunchEndTime = 13.5) => {
+  const lines = data.split("\n").filter((item) => item.trim() !== "");
 
-  return data;
+  const schedules = lines.map((line) => {
+    const [end, ...title] = line.split(" ");
+
+    const numberEnd = Number(end);
+    const titleCombined = title.join(" ");
+    return { end: numberEnd, title: titleCombined };
+  });
+
+  let currentStartTime = workStartTime;
+
+  schedules.forEach((schedule) => {
+    schedule.start = currentStartTime;
+    currentStartTime = schedule.end === 12.5 ? lunchEndTime : schedule.end;
+  });
+
+  return schedules;
 };
+// const args = process.argv;
+// (() => {
+//   console.log(args);
+//   return;
+//   const data =
+//     "10 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n10.5 [스마일게이트] 주간회의\n\n12 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n12.5 [희망스튜디오] 주간회의\n\n14.5 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n15 [스마일게이트] 주간회의\n\n15.5 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n16 [희망스튜디오] 시안 폰트 변경\n\n16.5 [푸드케어] 주간회의\n\n18 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n18.5 [FE] 스마일게이트 이슈 작업 가이드";
+//   const dataList = getFilteredData(data);
 
+//   console.log(dataList);
+// })();
+// return;
 (async () => {
   const browser = await puppeteer.launch({
     //headless:false로 변경하면 브라우저 창이 뜨는것을 볼 수 있습니다.
@@ -189,17 +197,19 @@ const getFilteredData = () => {
   // 일정 페이지로 이동
   await pageMacro.moveToSchedulePage();
 
-  const data = getFilteredData();
+  const data =
+    "10 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n10.5 [스마일게이트] 주간회의\n\n12 [스마일게이트] 통합 QA, 디자인 검수 이슈처리";
+  const dataList = getFilteredData(data);
 
-  data.forEach((item) => {
-    (async () => {
-      await pageMacro.addSchedule(
-        item.title,
-        getDateTimeFormat(item.start),
-        getDateTimeFormat(item.end)
-      );
-    })();
-  });
+  for (const item of dataList) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    await pageMacro.addSchedule(
+      item.title,
+      getDateTimeFormat(item.start),
+      getDateTimeFormat(item.end)
+    );
+  }
 
   // 브라우저 닫기
   //await browser.close();

@@ -15,7 +15,12 @@ class PageMacro {
     // dialog 이벤트 핸들러 등록 => alert창 뜰때마다 실행
     this.page.on("dialog", async (dialog) => {
       console.log(`Ignored Alert Message: ${dialog.message()}`);
-      await dialog.dismiss(); // alert 창 닫기
+
+      if (dialog.type() === "confirm") {
+        await dialog.accept(); // confirm 창의 확인 버튼을 누름
+      } else {
+        await dialog.dismiss(); // alert 창 닫기
+      }
     });
   }
 
@@ -204,10 +209,38 @@ const dayMacro = async (data) => {
   //await browser.close();
 };
 
+const dayMacroTest = async (data) => {
+  const browser = await puppeteer.launch({
+    headless: false,
+  });
+  const page = await browser.newPage();
+
+  // 페이지의 크기를 설정한다.
+  await page.setViewport({
+    width: 2800,
+    height: 1080,
+  });
+
+  // 페이지로 이동
+  await page.goto(bizboxURL);
+
+  const pageMacro = new PageMacro(page);
+
+  // 알럿 무시
+  pageMacro.ignoreAlert();
+
+  // 로그인
+  await pageMacro.login(process.env.BIZBOX_ID, process.env.BIZBOX_PASSWORD);
+
+  // 일정 페이지로 이동
+  await pageMacro.moveToSchedulePage();
+};
+
 const init = () => {
   const daySchedule = args[2];
   console.log(daySchedule);
   dayMacro(daySchedule);
+  // dayMacroTest(daySchedule);
 };
 
 // 실행

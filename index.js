@@ -19,20 +19,12 @@ class PageMacro {
     });
   }
 
-  async enterValueToElement(target, inputValue) {
-    await this.page.$eval(
-      target,
-      (el, value) => (el.value = value),
-      inputValue
-    );
-  }
-
   // 비즈박스 로그인
   async login(id, password) {
-    await this.enterValueToElement("#userId", id);
-    await this.enterValueToElement("#userPw", password);
+    await this.waitAndInsertValue("#userId", id);
+    await this.waitAndInsertValue("#userPw", password);
 
-    await this.page.click(".login_submit");
+    await this.waitAndClickElement(".login_submit");
   }
 
   // 일정 등록 Iframe 요소 getter
@@ -51,14 +43,18 @@ class PageMacro {
     await frame.waitForSelector("#loadingProgressBar", { hidden: true });
   }
 
+  async waitAndInsertValue(element, inputValue, wrapper = this.page) {
+    await wrapper.waitForSelector(element);
+
+    await this.page.$eval(
+      element,
+      (el, value) => (el.value = value),
+      inputValue
+    );
+  }
+
   async waitAndClickElement(element, wrapper = this.page) {
     await wrapper.waitForSelector(element);
-    /*
-    const elements = await wrapper.$$(element);
-    elements.forEach(async (el) => {
-      await el.evaluate((el) => console.log($(el))); // 요소의 특정 속성 값을 가져옵니다.
-    });
-    */
     await wrapper.click(element);
   }
 

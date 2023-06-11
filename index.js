@@ -160,7 +160,7 @@ const getFilteredData = (data, workStartTime = 9.5, lunchEndTime = 13.5) => {
   return schedules;
 };
 
-const dayMacro = async (data) => {
+const dayMacro = async (data, startTime) => {
   const browser = await puppeteer.launch({
     //headless:false로 변경하면 브라우저 창이 뜨는것을 볼 수 있습니다.
     headless: false,
@@ -193,7 +193,7 @@ const dayMacro = async (data) => {
 
   // const data =
   //   "10 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n10.5 [스마일게이트] 주간회의\n\n12 [스마일게이트] 통합 QA, 디자인 검수 이슈처리";
-  const dataList = getFilteredData(data);
+  const dataList = getFilteredData(data, startTime);
 
   for (const item of dataList) {
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -209,7 +209,7 @@ const dayMacro = async (data) => {
   //await browser.close();
 };
 
-const dayMacroTest = async (data) => {
+const dayMacroTest = async (data, startTime) => {
   const browser = await puppeteer.launch({
     headless: false,
   });
@@ -238,9 +238,11 @@ const dayMacroTest = async (data) => {
 
 const init = () => {
   const daySchedule = args[2];
-  console.log(daySchedule);
-  dayMacro(daySchedule);
-  // dayMacroTest(daySchedule);
+  const startTime = args[3] ? Number(args[3]) : 9.5;
+
+  // console.log(daySchedule);
+  dayMacro(daySchedule, startTime);
+  // dayMacroTest(daySchedule, startTime);
 };
 
 // 실행

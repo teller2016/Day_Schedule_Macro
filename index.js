@@ -143,11 +143,9 @@ const getDateTimeFormat = (time) => {
 const getFilteredData = (data, workStartTime = 9.5, lunchEndTime = 13.5) => {
 
   const schedules = data.map((line) => {
-    const [end, ...title] = line.split(" ");
-
-    const numberEnd = Number(end);
-    const titleCombined = title.join(" ");
-    return { end: numberEnd, title: titleCombined };
+    const match = line.match(/^(\d+(?:\.\d+)?)\s+(.+)$/);
+    
+    return { end: parseFloat(match[1]), title: match[2] };
   });
 
   let currentStartTime = workStartTime;

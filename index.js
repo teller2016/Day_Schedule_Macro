@@ -5,6 +5,7 @@ const args = isPkg ? pkg.argv : process.argv;
 const puppeteer = require("puppeteer");
 
 const bizboxURL = "https://gw.forbiz.co.kr/gw/uat/uia/egovLoginUsr.do";
+const SCHEDULE_FILE_NAME = "schedule.txt";
 
 class PageMacro {
   constructor(page) {
@@ -140,9 +141,8 @@ const getDateTimeFormat = (time) => {
 };
 
 const getFilteredData = (data, workStartTime = 9.5, lunchEndTime = 13.5) => {
-  const lines = data.split("\n").filter((item) => item.trim() !== "");
 
-  const schedules = lines.map((line) => {
+  const schedules = data.map((line) => {
     const [end, ...title] = line.split(" ");
 
     const numberEnd = Number(end);
@@ -191,8 +191,14 @@ const dayMacro = async (data, startTime) => {
   // 일정 페이지로 이동
   await pageMacro.moveToSchedulePage();
 
-  // const data =
-  //   "10 [스마일게이트] 통합 QA, 디자인 검수 이슈처리\n\n10.5 [스마일게이트] 주간회의\n\n12 [스마일게이트] 통합 QA, 디자인 검수 이슈처리";
+  
+  /**
+    const data = [
+      '10 [FE] 세주모션 테이블 옵션 기능 검토',
+      '10.5 [FE] 데일리미팅',
+      ...
+    ]
+   */
   const dataList = getFilteredData(data, startTime);
 
   for (const item of dataList) {
@@ -236,11 +242,24 @@ const dayMacroTest = async (data, startTime) => {
   await pageMacro.moveToSchedulePage();
 };
 
-const init = () => {
-  const daySchedule = args[2];
-  const startTime = args[3] ? Number(args[3]) : 9.5;
+const readScheduleFromFile = () => {
+  const fs = require('fs');
 
-  // console.log(daySchedule);
+  // 파일을 동기적으로 읽습니다.
+  const fileContent = fs.readFileSync(SCHEDULE_FILE_NAME, 'utf-8');
+
+  // 파일 내용을 줄 단위로 분리하여 배열로 만듭니다.
+  const lines = fileContent.split('\n').map(line => line.trim()).filter(line => line !== '');
+
+  return lines;
+}
+
+
+const init = () => {
+  const daySchedule = readScheduleFromFile();
+  const startTime = args[2] ? Number(args[2]) : 9.5;
+
+  console.log(daySchedule);
   dayMacro(daySchedule, startTime);
   // dayMacroTest(daySchedule, startTime);
 };

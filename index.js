@@ -68,8 +68,8 @@ class PageMacro {
   async moveToSchedulePage() {
     await this.waitAndClickElement("#topMenu300000000");
 
-    await this.page.waitForXPath("//*[text()='[플본] FE파트']"); // '[플본] FE파트'라는 텍스트가 있는 요소가 나타날 때까지 대기합니다.
-    const elements = await this.page.$x("//*[text()='[플본] FE파트']"); // '[플본] FE파트'라는 텍스트가 있는 모든 요소를 XPath를 통해 찾습니다.
+    await this.page.waitForXPath("//*[text()='[기술부문] FE챕터']"); // '[기술부문] FE챕터'라는 텍스트가 있는 요소가 나타날 때까지 대기합니다.
+    const elements = await this.page.$x("//*[text()='[기술부문] FE챕터']"); // '[기술부문] FE챕터'라는 텍스트가 있는 모든 요소를 XPath를 통해 찾습니다.
     // [FE]파트 페이지로 이동
     if (elements.length > 0) {
       await elements[0].click();

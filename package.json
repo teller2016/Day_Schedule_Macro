@@ -3,5 +3,8 @@
     "dotenv": "^16.0.3",
     "puppeteer": "^20.3.0",
     "puppeteer-core": "^20.3.0"
+  },
+  "scripts": {
+    "dev": "node index.js"
   }
 }

@@ -50,7 +50,7 @@ BIZBOX_PASSWORD=your_password
 ## 실행
 
 ```bash
-# 기본 시작 시간(9.5 = 09:30)으로 실행
+# 기본 시작 시간(9.5 = 09:30) + 오늘 날짜로 실행
 npm run dev
 
 # 시작 시간을 9시로 지정해 실행
@@ -61,6 +61,33 @@ node index.js 9
 npm run test:nav
 node index.js --test
 ```
+
+### 등록 날짜 지정
+
+기본은 **오늘**이며, 다음 옵션으로 전날·특정 날짜에 등록할 수 있습니다.
+
+```bash
+node index.js --days=-1            # 어제 (오늘 기준 N일, 음수=과거 / 양수=미래)
+node index.js --days=1             # 내일
+node index.js --date=2026-06-15    # 특정 날짜 (YYYY-MM-DD)
+node index.js 9 --days=-1          # 어제, 9시 시작 (시작 시간 인자와 함께 사용)
+```
+
+- `--date` 와 `--days` 는 함께 사용할 수 없습니다.
+- 잘못된 날짜(형식 오류, 존재하지 않는 날짜)는 실행 전에 차단됩니다.
+
+### 자주 쓰는 단축 명령 (npm scripts)
+
+| 명령 | 동작 |
+|------|------|
+| `npm run dev` | 오늘 / 기본 시작 시간(09:30) |
+| `npm run dev9` | 오늘 / 9시 시작 |
+| `npm run yesterday` | 어제 / 기본 시작 시간 |
+| `npm run yesterday9` | 어제 / 9시 시작 |
+| `npm run test:nav` | 일정 페이지 진입까지만 확인 (등록 X) |
+
+> 특정 날짜처럼 위 단축에 없는 경우엔 `node index.js --date=2026-06-15` 처럼 직접 실행하세요.
+> npm 스크립트에 옵션을 더 붙이려면 `--` 가 필요합니다 — 예: `npm run dev9 -- --days=-1`
 
 > 실행하면 브라우저 창이 열리며(headless: false), 작업 완료 후에도 결과 확인을 위해 창이 유지됩니다.
 > 자동 종료를 원하면 `index.js`의 `CONFIG.closeBrowserOnFinish`를 `true`로 변경하세요.

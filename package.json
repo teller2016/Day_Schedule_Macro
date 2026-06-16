@@ -12,6 +12,8 @@
   "scripts": {
     "dev": "node index.js",
     "dev9": "node index.js 9",
+    "yesterday": "node index.js --days=-1",
+    "yesterday9": "node index.js 9 --days=-1",
     "test:nav": "node index.js --test"
   }
 }

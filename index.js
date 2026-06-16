@@ -125,18 +125,75 @@ class PageMacro {
   }
 }
 
+// Date 객체를 YYYY-MM-DD 문자열로 변환
+const formatDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+// CLI 인자에서 등록 기준 날짜를 결정
+// --date=YYYY-MM-DD : 특정 날짜, --days=N : 오늘 기준 N일(음수=과거), 둘 다 없으면 오늘
+const parseBaseDate = (cliArgs) => {
+  const dateArg = cliArgs.find((arg) => arg.startsWith("--date="));
+  const daysArg = cliArgs.find((arg) => arg.startsWith("--days="));
+
+  if (dateArg && daysArg) {
+    throw new Error(
+      "--date 와 --days 는 함께 사용할 수 없습니다. 하나만 지정하세요."
+    );
+  }
+
+  // --date=YYYY-MM-DD
+  if (dateArg) {
+    const value = dateArg.slice("--date=".length);
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) {
+      throw new Error(
+        `잘못된 날짜 형식입니다: "${value}" (예: --date=2026-06-15)`
+      );
+    }
+
+    const [, year, month, day] = match.map(Number);
+    const date = new Date(year, month - 1, day);
+    // 존재하지 않는 날짜(예: 2026-02-31)가 다른 날로 넘어가는 것을 방지
+    if (
+      date.getFullYear() !== year ||
+      date.getMonth() !== month - 1 ||
+      date.getDate() !== day
+    ) {
+      throw new Error(`존재하지 않는 날짜입니다: "${value}"`);
+    }
+
+    return date;
+  }
+
+  // --days=N (오늘 기준 상대 일수)
+  if (daysArg) {
+    const raw = daysArg.slice("--days=".length);
+    const offset = Number(raw);
+    if (!Number.isInteger(offset)) {
+      throw new Error(`--days 값은 정수여야 합니다: "${raw}" (예: --days=-1)`);
+    }
+
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    return date;
+  }
+
+  // 기본값: 오늘
+  return new Date();
+};
+
 // 입력시간 포맷 맞춤 Ex. 2023-06-03T11:00:00
 // 소수 시간을 시:분으로 변환 (10 → 10:00, 10.5 → 10:30, 10.25 → 10:15, 10.75 → 10:45)
-const getDateTimeFormat = (time) => {
+const getDateTimeFormat = (time, baseDate = new Date()) => {
   const numberTime = Number(time);
-  const currentDate = new Date();
 
-  // #region 날짜 포맷
-  const year = currentDate.getFullYear();
-  const month = String(currentDate.getMonth() + 1).padStart(2, "0");
-  const day = String(currentDate.getDate()).padStart(2, "0");
-
-  const formattedDate = `${year}-${month}-${day}`;
+  // #region 날짜 포맷 (기준 날짜를 외부에서 주입받아 오늘 외 날짜도 등록 가능)
+  const formattedDate = formatDate(baseDate);
   // #endregion
 
   // #region 시간 포맷 (0.5 단위 제약을 없애고 임의 분 단위 지원)
@@ -187,7 +244,12 @@ const getFilteredData = (
 
 // 일정 매크로 실행 (이전 dayMacro / dayMacroTest 중복 제거)
 // testMode: true 이면 일정 페이지 이동까지만 수행하고 실제 등록은 건너뜀
-const runMacro = async (data, startTime, { testMode = false } = {}) => {
+// baseDate: 일정을 등록할 기준 날짜 (기본 오늘)
+const runMacro = async (
+  data,
+  startTime,
+  { testMode = false, baseDate = new Date() } = {}
+) => {
   const browser = await puppeteer.launch({
     // headless:false 이면 브라우저 창이 뜨는 것을 볼 수 있습니다.
     headless: false,
@@ -232,8 +294,8 @@ const runMacro = async (data, startTime, { testMode = false } = {}) => {
 
       await pageMacro.addSchedule(
         item.title,
-        getDateTimeFormat(item.start),
-        getDateTimeFormat(item.end)
+        getDateTimeFormat(item.start, baseDate),
+        getDateTimeFormat(item.end, baseDate)
       );
 
       console.log(`📅 등록: ${item.start} ~ ${item.end}  ${item.title}`);
@@ -282,9 +344,13 @@ const init = async () => {
       );
     }
 
-    // CLI 인자 파싱: 숫자 인자는 시작 시간, --test 는 테스트 모드
+    // CLI 인자 파싱
+    // - 숫자 인자(--로 시작하지 않음): 시작 시간
+    // - --test : 테스트 모드 (페이지 진입까지만)
+    // - --date=YYYY-MM-DD / --days=N : 등록 기준 날짜
     const cliArgs = process.argv.slice(2);
     const testMode = cliArgs.includes("--test");
+    const baseDate = parseBaseDate(cliArgs);
     const startTimeArg = cliArgs.find((arg) => !arg.startsWith("--"));
     const startTime = startTimeArg
       ? Number(startTimeArg)
@@ -300,9 +366,10 @@ const init = async () => {
 
     console.log("📋 불러온 일정:");
     daySchedule.forEach((line) => console.log(`  - ${line}`));
+    console.log(`📆 등록 날짜: ${formatDate(baseDate)}`);
     console.log(`⏰ 시작 시간: ${startTime}${testMode ? " (테스트 모드)" : ""}\n`);
 
-    await runMacro(daySchedule, startTime, { testMode });
+    await runMacro(daySchedule, startTime, { testMode, baseDate });
   } catch (err) {
     console.error(`\n❌ ${err.message}`);
     process.exitCode = 1;

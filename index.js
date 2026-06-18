@@ -10,6 +10,8 @@ const {
   getFilteredData,
   readScheduleFromFile,
 } = require("./src/schedule");
+const { runInteractive } = require("./src/prompt");
+const { runGuiInput } = require("./src/dialog");
 
 // 일정 매크로 실행
 // testMode: true 면 일정 페이지 진입까지만 / baseDate: 등록 기준 날짜
@@ -66,8 +68,23 @@ const init = async () => {
       throw new Error(".env 파일에 BIZBOX_ID와 BIZBOX_PASSWORD를 설정하세요.");
     }
 
-    // CLI 인자: 숫자=시작 시간, --test=테스트 모드, --date=/--days=등록 기준 날짜
     const cliArgs = process.argv.slice(2);
+
+    // 인자가 없으면 입력 모드 (맥은 GUI 다이얼로그, 그 외는 CLI 대화형)
+    if (cliArgs.length === 0) {
+      const result =
+        process.platform === "darwin"
+          ? runGuiInput()
+          : await runInteractive();
+      if (!result) return; // 취소했거나 입력 일정이 없음
+      await runMacro(result.lines, result.startTime, {
+        baseDate: result.baseDate,
+      });
+      return;
+    }
+
+    // 인자가 있으면 비대화형(빠른 실행/자동화) 모드
+    // 숫자=시작 시간, --test=테스트 모드, --date=/--days=등록 기준 날짜
     const testMode = cliArgs.includes("--test");
     const baseDate = parseBaseDate(cliArgs);
     const startTimeArg = cliArgs.find((arg) => !arg.startsWith("--"));

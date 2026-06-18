@@ -10,6 +10,27 @@ const formatDate = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+// 'YYYY-MM-DD' 문자열 → Date (형식 및 존재 여부 검증)
+const parseDateString = (value) => {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    throw new Error(`잘못된 날짜 형식입니다: "${value}" (예: 2026-06-15)`);
+  }
+
+  const [, year, month, day] = match.map(Number);
+  const date = new Date(year, month - 1, day);
+  // 존재하지 않는 날짜(예: 2026-02-31)가 다른 날로 넘어가는 것을 방지
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    throw new Error(`존재하지 않는 날짜입니다: "${value}"`);
+  }
+
+  return date;
+};
+
 // CLI 인자에서 등록 기준 날짜 결정
 // --date=YYYY-MM-DD : 특정 날짜 / --days=N : 오늘 기준 N일(음수=과거) / 없으면 오늘
 const parseBaseDate = (cliArgs) => {
@@ -23,26 +44,7 @@ const parseBaseDate = (cliArgs) => {
   }
 
   if (dateArg) {
-    const value = dateArg.slice("--date=".length);
-    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!match) {
-      throw new Error(
-        `잘못된 날짜 형식입니다: "${value}" (예: --date=2026-06-15)`
-      );
-    }
-
-    const [, year, month, day] = match.map(Number);
-    const date = new Date(year, month - 1, day);
-    // 존재하지 않는 날짜(예: 2026-02-31)가 다른 날로 넘어가는 것을 방지
-    if (
-      date.getFullYear() !== year ||
-      date.getMonth() !== month - 1 ||
-      date.getDate() !== day
-    ) {
-      throw new Error(`존재하지 않는 날짜입니다: "${value}"`);
-    }
-
-    return date;
+    return parseDateString(dateArg.slice("--date=".length));
   }
 
   if (daysArg) {
@@ -60,18 +62,18 @@ const parseBaseDate = (cliArgs) => {
   return new Date();
 };
 
-// 소수 시간 + 기준 날짜 → 'YYYY-MM-DDTHH:mm:ss' (10.5 → 10:30, 10.25 → 10:15)
-const getDateTimeFormat = (time, baseDate = new Date()) => {
+// 소수 시간 → 'HH:mm' (10.5 → '10:30', 10.25 → '10:15')
+const formatTime = (time) => {
   const numberTime = Number(time);
   const hour = Math.floor(numberTime);
   const minute = Math.round((numberTime - hour) * 60);
 
-  const formattedTime = `${String(hour).padStart(2, "0")}:${String(
-    minute
-  ).padStart(2, "0")}:00`;
-
-  return `${formatDate(baseDate)}T${formattedTime}`;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 };
+
+// 소수 시간 + 기준 날짜 → 'YYYY-MM-DDTHH:mm:ss'
+const getDateTimeFormat = (time, baseDate = new Date()) =>
+  `${formatDate(baseDate)}T${formatTime(time)}:00`;
 
 // 일정 줄 배열 → { start, end, title } 배열 (start 는 직전 일정 종료 시각으로 자동 계산)
 const getFilteredData = (
@@ -128,10 +130,18 @@ const readScheduleFromFile = () => {
   return lines;
 };
 
+// 일정 줄 배열을 schedule.txt 에 저장 (다음 실행 시 참고용)
+const saveScheduleToFile = (lines) => {
+  fs.writeFileSync(CONFIG.scheduleFileName, lines.join("\n") + "\n", "utf-8");
+};
+
 module.exports = {
   formatDate,
+  formatTime,
+  parseDateString,
   parseBaseDate,
   getDateTimeFormat,
   getFilteredData,
   readScheduleFromFile,
+  saveScheduleToFile,
 };

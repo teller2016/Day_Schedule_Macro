@@ -10,7 +10,7 @@ const CONFIG = {
 
   scheduleDelayMs: 500, // 일정 등록 사이 대기 시간(ms)
   viewport: { width: 1920, height: 1080 },
-  closeBrowserOnFinish: false, // 완료 후 브라우저 자동 종료 여부
+  closeBrowserOnFinish: false, // 완료 후 브라우저 자동 종료 여부 (결과 확인을 위해 기본 false)
 
   // 비즈박스 그룹웨어 DOM 셀렉터 (UI가 바뀌면 이 부분만 수정)
   selectors: {

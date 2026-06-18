@@ -13,12 +13,15 @@
 
 ```
 Day_Schedule_Macro/
-├── index.js          # 엔트리: 실행 흐름(runMacro) + CLI 처리(init)
+├── index.js          # 엔트리: 대화형/CLI 분기 + 실행 흐름(runMacro)
+├── 실행.command       # 맥 더블클릭 실행용
 ├── schedule.txt      # 등록할 일정 입력 파일
 └── src/
     ├── config.js     # 설정값 + 비즈박스 DOM 셀렉터
+    ├── dialog.js     # 맥 GUI 입력 (AppleScript 다이얼로그 + TextEdit)
     ├── pageMacro.js  # 브라우저 페이지 조작 (로그인·페이지 이동·일정 등록)
-    └── schedule.js   # 일정 파싱 / 시간·날짜 변환 / 파일 읽기
+    ├── prompt.js     # CLI 대화형 입력 (맥이 아닐 때 폴백)
+    └── schedule.js   # 일정 파싱 / 시간·날짜 변환 / 파일 읽기·저장
 ```
 
 ## 설치
@@ -61,16 +64,37 @@ BIZBOX_PASSWORD=your_password
 
 ## 실행
 
-```bash
-# 기본 시작 시간(9.5 = 09:30) + 오늘 날짜로 실행
-npm run dev
+### 입력 모드 (권장)
 
-# 시작 시간을 9시로 지정해 실행
-npm run dev9
+**인자 없이 실행**하면 입력 모드로 동작합니다. 맥에서는 **GUI 창**으로, 그 외 환경에서는 **터미널 대화형**으로 날짜·시작 시간·일정을 입력받고, 미리보기로 확인한 뒤 등록합니다. 옵션을 외울 필요가 없습니다.
+
+```bash
+node index.js      # 또는 npm run dev
+```
+
+> **맥에서는 `실행.command` 파일을 Finder에서 더블클릭**하세요.
+> (처음 실행 시 macOS 보안 때문에 우클릭 → "열기"로 한 번 허용해야 할 수 있습니다.)
+
+진행 순서 (맥 GUI):
+1. **날짜 선택** — `[오늘] [어제] [직접 입력]` 버튼
+2. **시작 시간** — 입력창 (기본 9.5)
+3. **일정 작성** — `schedule.txt`가 **TextEdit로 열립니다**. 일정을 작성/붙여넣은 뒤 **⌘S로 저장**하고 "작성 완료"를 누르세요. (빈 줄이 섞여 있어도 됩니다)
+4. **미리보기 확인** — 등록될 일정 목록을 확인하고 `[등록]`
+
+> 맥이 아닌 환경에서는 터미널에서 한 줄씩 입력받는 대화형으로 동작합니다.
+
+### 빠른 실행 (CLI)
+
+인자를 주면 대화형을 건너뛰고 미리 편집해 둔 `schedule.txt` 기반으로 바로 실행합니다.
+
+```bash
+npm run dev9            # 오늘, 9시 시작
 node index.js 9
 
-# 일정 등록 없이 일정 페이지 진입까지만 확인 (테스트 모드)
-npm run test:nav
+npm run yesterday       # 어제
+npm run yesterday9      # 어제, 9시 시작
+
+npm run test:nav        # 일정 페이지 진입까지만 확인 (등록 X)
 node index.js --test
 ```
 
